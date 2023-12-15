@@ -12,11 +12,14 @@ enum CrossChainTransferType @entity {
   RedeemToOther
 } 
 
+
+
 type CrossChainTransfer @entity {
   id: ID!
   receipt_id: String!
   receiver: String!
   sender: String!
+  token_contract_id: String
   amount: BigInt!
   memo: String
   denom: String!
@@ -33,4 +36,13 @@ type ReceiptLink @entity {
   id: ID!
   father: String
   method_name: String!
+  predecessor_id: String!
+}
+
+type TracePathAndBaseDenomToTokenContract @entity {
+  id: ID! # trace_path+ "#" + base_denom
+  trace_path: String!
+  base_denom: String!
+  token_contract: String!
+  registered_receipt_id: String!
 }

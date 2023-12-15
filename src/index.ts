@@ -4,6 +4,7 @@ import { JSON } from "assemblyscript-json";
 import { parseAttributes } from "./util";
 import { CrossChainTransferHelper } from "./cross_chain_transfer"
 import { cross_chain_transfer_status, cross_chain_transfer_type } from "./types"
+import { TracePathAndBaseDenomToTokenContractHelper } from "./token_contract";
 
 export function handleReceipt(
 	receiptWithOutcome: near.ReceiptWithOutcome
@@ -47,6 +48,11 @@ export function handleReceipt(
 			handleApplyTransferRequest(fc_action, receiptWithOutcome)
 		}
 
+		if (fc_action.methodName == "register_asset_for_channel") {
+			handleRegisterAssetForChannel(fc_action, receiptWithOutcome)
+		}
+
+
 		// if (fc_action.methodName == "cancel_transfer_request") {
 		// 	handleCancelTransferRequest(fc_action, receiptWithOutcome)
 		// }
@@ -85,7 +91,8 @@ export function handleDeliver(outcome: near.ReceiptWithOutcome): void {
 							attributes,
 							block_height,
 							epoch_height,
-							cross_chain_transfer_type.redeem_to_near
+							cross_chain_transfer_type.redeem_to_near,
+							null
 						)
 						// redeem to near
 						// handleRedeemToNear(receipt_id, ibc_raw_event, attributes, block_height, epoch_height)
@@ -95,7 +102,8 @@ export function handleDeliver(outcome: near.ReceiptWithOutcome): void {
 							attributes,
 							block_height,
 							epoch_height,
-							cross_chain_transfer_type.transfer_to_near
+							cross_chain_transfer_type.transfer_to_near,
+							null
 						)
 						// transfer to near
 						// handleTransferToNear(receipt_id, ibc_raw_event, attributes, block_height, epoch_height)
@@ -167,6 +175,11 @@ export function handleProcessTransferRequest(fc_action: near.FunctionCallAction,
 
 	let receipt_id = receiptWithOutcome.receipt.id.toBase58();
 	let is_failed = true;
+	let args = json.fromBytes(fc_action.args).toObject();
+	let transfer_request = args.get("transfer_request")!.toObject()
+	let token_denom = transfer_request.get("token_denom")!.toString()
+	let token_trace_path = transfer_request.get("token_trace_path")!.toString()
+
 	for (let i = 0; i < receiptWithOutcome.outcome.logs.length; i++) {
 		let outcomeLog = receiptWithOutcome.outcome.logs[i];
 		if (outcomeLog.startsWith("EVENT_JSON:")) {
@@ -196,17 +209,19 @@ export function handleProcessTransferRequest(fc_action: near.FunctionCallAction,
 							attributes,
 							block_height,
 							epoch_height,
-							cross_chain_transfer_type.redeem_to_other
+							cross_chain_transfer_type.redeem_to_other,
+							null
 						)
-
 					} else {
+					let  token_contract = TracePathAndBaseDenomToTokenContractHelper.getObj(token_trace_path,denom).token_contract
 						// transfer to other
 						CrossChainTransferHelper.create(
 							receipt_id,
 							attributes,
 							block_height,
 							epoch_height,
-							cross_chain_transfer_type.transfer_to_other
+							cross_chain_transfer_type.transfer_to_other,
+							token_contract
 						)
 					}
 				}
@@ -214,8 +229,6 @@ export function handleProcessTransferRequest(fc_action: near.FunctionCallAction,
 		}
 	}
 	if(is_failed) {
-		let args = json.fromBytes(fc_action.args).toObject();
-		let transfer_request = args.get("transfer_request")!.toObject()
 
 		let cross_chain_transfer = new CrossChainTransfer(receipt_id);
 		cross_chain_transfer.sender = transfer_request.get("sender")!.toString()
@@ -242,6 +255,14 @@ export function handleApplyTransferRequest(fc_action: near.FunctionCallAction, r
 	let cross_chain_transfer = get_cross_chain_transfer_from_father(receipt_id)
 	cross_chain_transfer.status = cross_chain_transfer_status.successful
 	cross_chain_transfer.save()
+}
+
+export function handleRegisterAssetForChannel(
+	fc_action: near.FunctionCallAction, 
+	receiptWithOutcome: near.ReceiptWithOutcome
+): void {
+
+	TracePathAndBaseDenomToTokenContractHelper.createByRegisterAssetForChannel(fc_action, receiptWithOutcome)
 }
 
 export function handleCancelTransferRequest(fc_action: near.FunctionCallAction, receiptWithOutcome: near.ReceiptWithOutcome): void {
@@ -277,6 +298,7 @@ export function createReceiptLinks(fc_action: near.FunctionCallAction, outcome: 
 		let receipt_link = new ReceiptLink(son_id)
 		receipt_link.method_name = fc_action.methodName
 		receipt_link.father = receipt_id
+		receipt_link.predecessor_id =outcome.receipt.predecessorId
 		receipt_link.save()
 	}
 }

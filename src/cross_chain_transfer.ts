@@ -9,7 +9,8 @@ export class CrossChainTransferHelper {
 		attributes: Map<string, string>,
 		block_height: BigInt,
 		epoch_height: BigInt,
-		type: cross_chain_transfer_type.CrossChainTransferType
+		type: cross_chain_transfer_type.CrossChainTransferType,
+		token_contract: string | null
 	): CrossChainTransfer {
 
 		let cross_chain_transfer = new CrossChainTransfer(receipt_id);
@@ -25,6 +26,8 @@ export class CrossChainTransferHelper {
 		cross_chain_transfer.receipt_id = receipt_id
 		cross_chain_transfer.type = type
 		cross_chain_transfer.status = cross_chain_transfer_status.pending
+
+		cross_chain_transfer.token_contract_id = token_contract
 
 		// other_to_near.transfer_to_near_execution = transfer_to_near.id
 		cross_chain_transfer.save()
