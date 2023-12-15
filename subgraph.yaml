@@ -1,0 +1,20 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: near
+    name: receipts
+    network: near-testnet
+    source:
+      accounts:
+        suffixes:
+          - "v8.nearibc.testnet"
+      startBlock: 144936338
+    mapping:
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - ExampleEntity
+      receiptHandlers:
+        - handler: handleReceipt
+      file: ./src/index.ts

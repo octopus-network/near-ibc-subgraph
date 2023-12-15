@@ -1,0 +1,16 @@
+# MacOS files
+.DS_Store
+
+# IDEA files
+*.idea
+
+# Build & generated files
+build
+generated
+
+# Enviroment files
+*.env
+
+# Yarn libraries
+node_modules/
+/yarn-error.log

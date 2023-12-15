@@ -1,0 +1,36 @@
+
+enum CrossChainTransferStatus @entity {
+  Pending
+  Successful
+  Failed
+}
+
+enum CrossChainTransferType @entity {
+  TransferToNear
+  RedeemToNear
+  TransferToOther
+  RedeemToOther
+} 
+
+type CrossChainTransfer @entity {
+  id: ID!
+  receipt_id: String!
+  receiver: String!
+  sender: String!
+  amount: BigInt!
+  memo: String
+  denom: String!
+
+  block_height: BigInt
+  epoch_height: BigInt
+
+  type: CrossChainTransferType!
+
+  status: CrossChainTransferStatus!
+}
+
+type ReceiptLink @entity {
+  id: ID!
+  father: String
+  method_name: String!
+}
